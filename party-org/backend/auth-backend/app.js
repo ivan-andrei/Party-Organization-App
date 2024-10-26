@@ -1,18 +1,18 @@
 const express = require("express");
-const app = express();
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
-// require database connection
 const dbConnect = require("./db/dbConnect");
 const User = require("./db/userModel");
 const auth = require("./auth");
+const eventRoutes = require("./routes/event"); // Import event routes
 
-// execute database connection
+const app = express();
+
+// Execute database connection
 dbConnect();
 
-// Curb Cores Error by adding a header here
+// Curb CORS error by adding headers
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
@@ -26,77 +26,55 @@ app.use((req, res, next) => {
   next();
 });
 
-// body parser configuration
+// Body parser configuration
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get("/", (request, response, next) => {
-  response.json({ message: "Hey! This is your server response!" });
-  next();
-});
-
-// register endpoint
-app.post("/register", (request, response) => {
-  // hash the password
+// Register endpoint
+app.post("/register", (req, res) => {
   bcrypt
-    .hash(request.body.password, 10)
+    .hash(req.body.password, 10)
     .then((hashedPassword) => {
-      // create a new user instance and collect the data
       const user = new User({
-        email: request.body.email,
+        email: req.body.email,
         password: hashedPassword,
       });
-
-      // save the new user
       user
         .save()
-        // return success if the new user is added to the database successfully
         .then((result) => {
-          response.status(201).send({
+          res.status(201).send({
             message: "User Created Successfully",
             result,
           });
         })
-        // catch erroe if the new user wasn't added successfully to the database
         .catch((error) => {
-          response.status(500).send({
+          res.status(500).send({
             message: "Error creating user",
             error,
           });
         });
     })
-    // catch error if the password hash isn't successful
     .catch((e) => {
-      response.status(500).send({
+      res.status(500).send({
         message: "Password was not hashed successfully",
         e,
       });
     });
 });
 
-// login endpoint
-app.post("/login", (request, response) => {
-  // check if email exists
-  User.findOne({ email: request.body.email })
-
-    // if email exists
+// Login endpoint
+app.post("/login", (req, res) => {
+  User.findOne({ email: req.body.email })
     .then((user) => {
-      // compare the password entered and the hashed password found
       bcrypt
-        .compare(request.body.password, user.password)
-
-        // if the passwords match
+        .compare(req.body.password, user.password)
         .then((passwordCheck) => {
-
-          // check if password matches
-          if(!passwordCheck) {
-            return response.status(400).send({
+          if (!passwordCheck) {
+            return res.status(400).send({
               message: "Passwords does not match",
               error,
             });
           }
-
-          //   create JWT token
           const token = jwt.sign(
             {
               userId: user._id,
@@ -105,39 +83,38 @@ app.post("/login", (request, response) => {
             "RANDOM-TOKEN",
             { expiresIn: "24h" }
           );
-
-          //   return success response
-          response.status(200).send({
+          res.status(200).send({
             message: "Login Successful",
             email: user.email,
             token,
           });
         })
-        // catch error if password do not match
         .catch((error) => {
-          response.status(400).send({
+          res.status(400).send({
             message: "Passwords does not match",
             error,
           });
         });
     })
-    // catch error if email does not exist
     .catch((e) => {
-      response.status(404).send({
+      res.status(404).send({
         message: "Email not found",
         e,
       });
     });
 });
 
-// free endpoint
-app.get("/free-endpoint", (request, response) => {
-  response.json({ message: "You are free to access me anytime" });
+// Free endpoint
+app.get("/free-endpoint", (req, res) => {
+  res.json({ message: "You are free to access me anytime" });
 });
 
-// authentication endpoint
-app.get("/auth-endpoint", auth, (request, response) => {
-  response.send({ message: "You are authorized to access me" });
+// Authenticated endpoint
+app.get("/auth-endpoint", auth, (req, res) => {
+  res.send({ message: "You are authorized to access me" });
 });
+
+// Use event routes
+app.use("/events", eventRoutes);
 
 module.exports = app;
