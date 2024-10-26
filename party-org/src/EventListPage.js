@@ -164,22 +164,19 @@ function EventListPage() {
           <ModalContent>
             <h2>{selectedEvent.name}</h2>
             <p>Date: {new Date(selectedEvent.date).toLocaleDateString()}</p>
-
+            <h3>Participants</h3>
             <ResponsibilitiesList>
               {selectedEvent.participants && selectedEvent.participants.length > 0 ? (
                 selectedEvent.participants.map((participant, index) => (
-                  <ResponsibilityItem key={index}>
+                  <li key={index}>
                     {participant.name} 
-                    <ParticipantDetailsButton onClick={() => openParticipantModal(participant)}>
-                      Details
-                    </ParticipantDetailsButton>
-                  </ResponsibilityItem>
+                    <ParticipantDetailsButton onClick={() => openParticipantModal(participant)}>Details</ParticipantDetailsButton>
+                  </li>
                 ))
               ) : (
-                <ResponsibilityItem>No participants yet.</ResponsibilityItem>
+                <p>No participants added.</p>
               )}
             </ResponsibilitiesList>
-
             <CloseButton onClick={closeEventModal}>Close</CloseButton>
           </ModalContent>
         </Modal>
@@ -202,9 +199,17 @@ function EventListPage() {
         >
           <ModalContent>
             <h2>{selectedParticipant.name}</h2>
-            {selectedParticipant.email && <p>Email: {selectedParticipant.email}</p>}
-            {selectedParticipant.responsibility && <p>Responsibility: {selectedParticipant.responsibility}</p>}
-            {selectedParticipant.budget && <p>Budget: {selectedParticipant.budget}</p>}
+            <p>Email: {selectedParticipant.email}</p>
+            <h3>Responsibilities:</h3>
+            <ResponsibilitiesList>
+              {selectedParticipant.responsibilities && selectedParticipant.responsibilities.length > 0 ? (
+                selectedParticipant.responsibilities.map((responsibility, index) => (
+                  <ResponsibilityItem key={index}>{responsibility}</ResponsibilityItem>
+                ))
+              ) : (
+                <p>No responsibilities assigned.</p>
+              )}
+            </ResponsibilitiesList>
             <CloseButton onClick={closeParticipantModal}>Close</CloseButton>
           </ModalContent>
         </Modal>

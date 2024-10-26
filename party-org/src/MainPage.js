@@ -124,6 +124,7 @@ function MainPage() {
   const [viewParticipantsModalIsOpen, setViewParticipantsModalIsOpen] = useState(false);
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('');
+  const [eventBudget, setEventBudget] = useState(''); // Added budget state
   const [newParticipant, setNewParticipant] = useState({ name: '', email: '', responsibilities: '' });
   const [participants, setParticipants] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -137,6 +138,7 @@ function MainPage() {
   const closeModal = () => {
     setEventName('');
     setEventDate('');
+    setEventBudget(''); // Reset budget
     setNewParticipant({ name: '', email: '', responsibilities: '' });
     setParticipants([]);
     setModalIsOpen(false);
@@ -153,7 +155,6 @@ function MainPage() {
 
   const handleAddParticipant = () => {
     if (newParticipant.name && newParticipant.email && newParticipant.responsibilities) {
-      // Create a new participant object that includes responsibilities
       const updatedParticipants = [
         ...participants,
         {
@@ -167,7 +168,7 @@ function MainPage() {
     } else {
       alert('Please fill out all participant details.');
     }
-  };
+  };  
 
   const handleParticipantInputChange = (field, value) => {
     setNewParticipant({ ...newParticipant, [field]: value });
@@ -179,7 +180,12 @@ function MainPage() {
       const newEvent = {
         name: eventName,
         date: new Date(eventDate).toISOString(), // Ensure date is in ISO format
-        participants,
+        budget: eventBudget, // Add the budget here
+        participants: participants.map(participant => ({
+          name: participant.name,
+          email: participant.email,
+          responsibilities: participant.responsibilities // This should now work
+        })),
       };
       try {
         const response = await axios.post('http://localhost:5000/events', newEvent);
@@ -197,7 +203,7 @@ function MainPage() {
     } else {
       alert('Please complete all event details and add at least one participant.');
     }
-  };
+  };  
 
   return (
     <Container>
@@ -244,6 +250,12 @@ function MainPage() {
             value={eventDate}
             onChange={(e) => setEventDate(e.target.value)}
           />
+          <Input
+            type="number"
+            placeholder="Event Budget"
+            value={eventBudget}
+            onChange={(e) => setEventBudget(e.target.value)}
+          />
           <h3>Participants</h3>
           <Button onClick={openViewParticipantsModal}>View Participants</Button>
           <Input
@@ -260,7 +272,7 @@ function MainPage() {
           />
           <Input
             type="text"
-            placeholder="Responsibilities (comma-separated)"
+            placeholder="Responsibilities (comma separated)"
             value={newParticipant.responsibilities}
             onChange={(e) => handleParticipantInputChange('responsibilities', e.target.value)}
           />
@@ -271,16 +283,8 @@ function MainPage() {
               {isLoading ? 'Creating...' : 'Create Event'}
             </Button>
           </ButtonContainer>
-          <ParticipantList>
-            {participants.map((participant, index) => (
-              <div key={index}>
-                {participant.name} - {participant.email} - Responsibilities: {participant.responsibilities.join(', ')}
-              </div>
-            ))}
-          </ParticipantList>
         </ModalContent>
       </Modal>
-
       <Modal
         isOpen={viewParticipantsModalIsOpen}
         onRequestClose={closeViewParticipantsModal}
@@ -290,30 +294,29 @@ function MainPage() {
             backgroundColor: 'rgba(0, 0, 0, 0.7)',
           },
           content: {
-            maxWidth: '500px',
+            maxWidth: '400px',
             margin: 'auto',
             borderRadius: '0.5rem',
-            height: 'auto', // Let the height adjust to content
+            height: 'auto',
             display: 'flex',
-            flexDirection: 'column', // Make it column flex
-            justifyContent: 'flex-start', // Align content to the start
-            alignItems: 'stretch', // Stretch items to fill width
-            overflowX: 'hidden', // Prevent horizontal overflow
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            alignItems: 'stretch',
+            overflowX: 'hidden',
           },
         }}
       >
         <ParticipantModalContent>
           <h2>Participants</h2>
           <ParticipantList>
-            {participants.length === 0 ? (
-              <div>No participants added yet.</div>
-            ) : (
-              participants.map((participant, index) => (
-                <div key={index}>
-                  {participant.name} - {participant.email} - Responsibilities: {participant.responsibilities.join(', ')}
+            {participants.map((participant, index) => (
+              <div key={index}>
+                <strong>{participant.name}</strong> - {participant.email}
+                <div>
+                  Responsibilities: {participant.responsibilities.join(', ')}
                 </div>
-              ))
-            )}
+              </div>
+            ))}
           </ParticipantList>
           <Button onClick={closeViewParticipantsModal}>Close</Button>
         </ParticipantModalContent>
